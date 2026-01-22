@@ -43,7 +43,7 @@ body {
     justify-content: center;
     z-index: 30;
     opacity: 1;
-    transition: opacity 0.5s ease;
+    transition: opacity 0.3s ease;
 }
 
 .question-section.fade-out {
@@ -56,7 +56,6 @@ body {
     object-fit: cover;
     display: block;
     opacity: 1;
-    transition: opacity 0.5s ease;
 }
 
 .options-section {
@@ -191,7 +190,7 @@ body {
     z-index: 40;
     overflow: hidden;
     opacity: 0;
-    transition: opacity 0.5s ease;
+    transition: opacity 0.3s ease;
 }
 
 .answer-image-container.reveal {

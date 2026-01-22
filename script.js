@@ -71,39 +71,43 @@ function loadQuestion() {
     answerImageContainer.style.display = 'none';
     answerImageContainer.classList.remove('reveal', 'fade-out');
     
-    // Set new question image source
-    questionImage.src = getQuestionImagePath(questionNum);
+    // Preload the image first
+    const imagePath = getQuestionImagePath(questionNum);
+    const img = new Image();
     
-    // Reset question section - start with fade-out class, then remove it for fade-in
-    questionSection.style.display = 'flex';
-    questionSection.classList.add('fade-out');
-    
-    // Show options section
-    document.querySelector('.options-section').style.display = 'flex';
-    
-    // Reset button back to "Go"
-    const goBtn = document.getElementById('go-btn');
-    if (goBtn) {
-        goBtn.textContent = 'Go';
-        goBtn.disabled = false;
-        goBtn.style.opacity = '1';
-    }
-    
-    selectedOption = null;
-    
-    // Wait for image to load, then fade in
-    if (questionImage.complete) {
-        // Image already loaded, fade in immediately
-        setTimeout(function() {
+    img.onload = function() {
+        // Image loaded, set source and fade in
+        questionImage.src = imagePath;
+        
+        // Reset question section - start with fade-out class, then remove it for fade-in
+        questionSection.style.display = 'flex';
+        questionSection.classList.add('fade-out');
+        
+        // Show options section
+        document.querySelector('.options-section').style.display = 'flex';
+        
+        // Reset button back to "Go"
+        const goBtn = document.getElementById('go-btn');
+        if (goBtn) {
+            goBtn.textContent = 'Go';
+            goBtn.disabled = false;
+            goBtn.style.opacity = '1';
+        }
+        
+        selectedOption = null;
+        
+        // Fade in immediately since image is already loaded
+        requestAnimationFrame(function() {
             questionSection.classList.remove('fade-out');
-        }, 50);
-    } else {
-        // Wait for image to load, then fade in
-        questionImage.onload = function() {
-            setTimeout(function() {
-                questionSection.classList.remove('fade-out');
-            }, 50);
-        };
+        });
+    };
+    
+    // Start loading the image
+    img.src = imagePath;
+    
+    // If image is already cached, onload might not fire, so check
+    if (img.complete) {
+        img.onload();
     }
 }
 
@@ -142,10 +146,10 @@ function revealAnswer() {
     answerImage.src = answerPath;
     answerImageContainer.style.display = 'block';
     
-    // Fade in the answer image
-    setTimeout(function() {
+    // Fade in the answer image immediately
+    requestAnimationFrame(function() {
         answerImageContainer.classList.add('reveal');
-    }, 300); // Small delay for smooth fade
+    });
 }
 
 // Move to next question
@@ -170,7 +174,7 @@ function nextQuestion() {
         }
         
         loadQuestion();
-    }, 500); // Wait for fade out transition to complete
+    }, 300); // Reduced wait time to match transition duration
 }
 
 // Event listeners
