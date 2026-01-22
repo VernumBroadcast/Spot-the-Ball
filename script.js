@@ -64,116 +64,119 @@ function loadQuestion() {
     questionsShown.add(questionNum);
     
     const questionImage = document.getElementById('question-image');
-    questionImage.src = getQuestionImagePath(questionNum);
-    
-    // Reset UI - show question section, hide result section
     const questionSection = document.querySelector('.question-section');
-    const resultSection = document.getElementById('result-section');
-    const resultMessage = document.getElementById('result-message');
     const answerImageContainer = document.querySelector('.answer-image-container');
     
-    // Reset all classes and displays
-    resultSection.style.display = 'none';
-    resultSection.classList.remove('show');
-    resultMessage.classList.remove('show');
+    // Hide answer image container and remove all classes first
+    answerImageContainer.style.display = 'none';
+    answerImageContainer.classList.remove('reveal', 'fade-out');
+    
+    // Set new question image source
+    questionImage.src = getQuestionImagePath(questionNum);
+    
+    // Reset question section - start with fade-out class, then remove it for fade-in
     questionSection.style.display = 'flex';
+    questionSection.classList.add('fade-out');
+    
     // Show options section
     document.querySelector('.options-section').style.display = 'flex';
-    // Hide answer image container and remove reveal class
-    answerImageContainer.style.display = 'none';
-    answerImageContainer.classList.remove('reveal');
     
-    document.querySelectorAll('.option-btn').forEach(btn => {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-    });
+    // Reset button back to "Go"
+    const goBtn = document.getElementById('go-btn');
+    if (goBtn) {
+        goBtn.textContent = 'Go';
+        goBtn.disabled = false;
+        goBtn.style.opacity = '1';
+    }
     
     selectedOption = null;
+    
+    // Wait for image to load, then fade in
+    if (questionImage.complete) {
+        // Image already loaded, fade in immediately
+        setTimeout(function() {
+            questionSection.classList.remove('fade-out');
+        }, 50);
+    } else {
+        // Wait for image to load, then fade in
+        questionImage.onload = function() {
+            setTimeout(function() {
+                questionSection.classList.remove('fade-out');
+            }, 50);
+        };
+    }
 }
 
-// Handle option selection
-function selectOption(option) {
+// Handle button click (Go or Next)
+function handleButtonClick() {
+    const goBtn = document.getElementById('go-btn');
+    const buttonText = goBtn.textContent.trim();
+    
+    if (buttonText === 'Go') {
+        // Reveal answer
+        revealAnswer();
+    } else if (buttonText === 'Next') {
+        // Go to next question
+        nextQuestion();
+    }
+}
+
+// Reveal answer
+function revealAnswer() {
     if (selectedOption !== null) return; // Already answered
     
-    selectedOption = option;
+    selectedOption = true;
     // Get the actual question number from the shuffled order
     const questionNum = questionOrder[currentQuestionIndex];
-    // correctAnswers array is 0-indexed, so subtract 1
-    const correctAnswer = correctAnswers[questionNum - 1];
-    const isCorrect = option === correctAnswer;
     
-    // Disable all buttons
-    document.querySelectorAll('.option-btn').forEach(btn => {
-        btn.disabled = true;
-    });
-    
-    // Hide options
-    document.querySelector('.options-section').style.display = 'none';
-    
-    const questionSection = document.querySelector('.question-section');
-    const resultSection = document.getElementById('result-section');
-    const resultMessage = document.getElementById('result-message');
+    const goBtn = document.getElementById('go-btn');
     const answerImage = document.getElementById('answer-image');
     const answerImageContainer = document.querySelector('.answer-image-container');
     
-    // Set image source first
+    // Change button to "Next"
+    goBtn.textContent = 'Next';
+    goBtn.disabled = false; // Re-enable for next click
+    
+    // Set image source and reveal answer directly
     const answerPath = getAnswerImagePath(questionNum);
     answerImage.src = answerPath;
     answerImageContainer.style.display = 'block';
-    answerImageContainer.classList.remove('reveal');
     
-    // Set up result message
-    resultMessage.textContent = isCorrect ? '✓ CORRECT!' : '✗ WRONG!';
-    resultMessage.className = 'result-message ' + (isCorrect ? 'correct' : 'wrong');
-    
-    // Show result section (but keep it transparent initially)
-    resultSection.style.display = 'flex';
-    resultSection.classList.remove('show');
-    resultMessage.classList.remove('show');
-    
-    // Keep question image visible - don't fade it out
-    // Show result message immediately
-    resultSection.classList.add('show');
-    resultMessage.classList.add('show');
-    
-    // After showing message, reveal the answer image (which will overlay the question)
+    // Fade in the answer image
     setTimeout(function() {
         answerImageContainer.classList.add('reveal');
-    }, 1500); // Show message for 1.5 seconds before revealing answer
-    
-    // Hide the result message after 2 seconds
-    setTimeout(function() {
-        resultMessage.classList.remove('show');
-    }, 2000); // Hide message after 2 seconds
+    }, 300); // Small delay for smooth fade
 }
 
 // Move to next question
 function nextQuestion() {
-    currentQuestionIndex++;
+    const questionSection = document.querySelector('.question-section');
+    const answerImageContainer = document.querySelector('.answer-image-container');
     
-    // Check if all questions in current cycle have been shown
-    if (currentQuestionIndex >= totalQuestions || questionsShown.size >= totalQuestions) {
-        // All questions shown - reshuffle for next cycle
-        questionOrder = shuffleArray(Array.from({length: totalQuestions}, (_, i) => i + 1));
-        currentQuestionIndex = 0;
-        questionsShown.clear();
-    }
+    // Fade out current question and answer
+    questionSection.classList.add('fade-out');
+    answerImageContainer.classList.add('fade-out');
     
-    loadQuestion();
+    // Wait for fade out to complete, then load next question
+    setTimeout(function() {
+        currentQuestionIndex++;
+        
+        // Check if all questions in current cycle have been shown
+        if (currentQuestionIndex >= totalQuestions || questionsShown.size >= totalQuestions) {
+            // All questions shown - reshuffle for next cycle
+            questionOrder = shuffleArray(Array.from({length: totalQuestions}, (_, i) => i + 1));
+            currentQuestionIndex = 0;
+            questionsShown.clear();
+        }
+        
+        loadQuestion();
+    }, 500); // Wait for fade out transition to complete
 }
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // Option buttons
-    document.querySelectorAll('.option-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const option = parseInt(this.getAttribute('data-option'));
-            selectOption(option);
-        });
-    });
-    
-    // Next button
-    document.getElementById('next-btn').addEventListener('click', nextQuestion);
+    // Go/Next button (handles both states)
+    document.getElementById('go-btn').addEventListener('click', handleButtonClick);
     
     // Initialize game
     initGame();
