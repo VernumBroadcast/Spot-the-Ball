@@ -76,12 +76,13 @@ function loadQuestion() {
     const img = new Image();
     
     img.onload = function() {
-        // Image loaded, set source and fade in
+        // Image loaded, set source
         questionImage.src = imagePath;
         
-        // Reset question section - start with fade-out class, then remove it for fade-in
+        // Reset question section - start hidden, then fade in
         questionSection.style.display = 'flex';
-        questionSection.classList.add('fade-out');
+        questionSection.classList.remove('fade-out'); // Remove any fade-out class
+        questionSection.classList.add('fade-out'); // Start with fade-out (hidden)
         
         // Show options section
         document.querySelector('.options-section').style.display = 'flex';
@@ -96,9 +97,11 @@ function loadQuestion() {
         
         selectedOption = null;
         
-        // Fade in immediately since image is already loaded
+        // Fade in the question after a brief moment
         requestAnimationFrame(function() {
-            questionSection.classList.remove('fade-out');
+            setTimeout(function() {
+                questionSection.classList.remove('fade-out');
+            }, 50);
         });
     };
     
@@ -134,6 +137,7 @@ function revealAnswer() {
     const questionNum = questionOrder[currentQuestionIndex];
     
     const goBtn = document.getElementById('go-btn');
+    const questionSection = document.querySelector('.question-section');
     const answerImage = document.getElementById('answer-image');
     const answerImageContainer = document.querySelector('.answer-image-container');
     
@@ -141,15 +145,40 @@ function revealAnswer() {
     goBtn.textContent = 'Next';
     goBtn.disabled = false; // Re-enable for next click
     
-    // Set image source and reveal answer directly
+    // Preload answer image first
     const answerPath = getAnswerImagePath(questionNum);
-    answerImage.src = answerPath;
-    answerImageContainer.style.display = 'block';
+    const img = new Image();
     
-    // Fade in the answer image immediately
-    requestAnimationFrame(function() {
-        answerImageContainer.classList.add('reveal');
-    });
+    img.onload = function() {
+        // Image loaded, now set source
+        answerImage.src = answerPath;
+        
+        // Fade out question first
+        questionSection.classList.add('fade-out');
+        
+        // After question starts fading, prepare answer container
+        setTimeout(function() {
+            // Set display and ensure it starts hidden
+            answerImageContainer.style.display = 'block';
+            answerImageContainer.classList.remove('reveal');
+            
+            // Force a reflow to ensure the element is rendered before transition
+            answerImageContainer.offsetHeight;
+            
+            // Now fade in the answer
+            requestAnimationFrame(function() {
+                answerImageContainer.classList.add('reveal');
+            });
+        }, 150); // Start showing answer halfway through question fade
+    };
+    
+    // Start loading the image
+    img.src = answerPath;
+    
+    // If image is already cached, onload might not fire
+    if (img.complete) {
+        img.onload();
+    }
 }
 
 // Move to next question
